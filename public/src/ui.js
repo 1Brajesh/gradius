@@ -104,6 +104,27 @@ export function drawHint(ctx, alpha) {
   ctx.globalAlpha = 1;
 }
 
+// Big title card (stage name, section names, checkpoint).
+export function drawBanner(ctx, b) {
+  const life = 3.4;
+  const k = Math.min(1, b.t / 0.4, (life - b.t) / 0.8);
+  if (k <= 0) return;
+  ctx.globalAlpha = k;
+  const y = H * 0.3;
+  if (b.small) {
+    text(ctx, b.title, W / 2, y, { size: 22, weight: 800, align: 'center', base: 'middle', spacing: 8, color: 'rgba(220,235,255,0.95)' });
+    if (b.sub) text(ctx, b.sub, W / 2, y + 30, { size: 15, weight: 500, align: 'center', base: 'middle', color: 'rgba(190,205,240,0.85)' });
+  } else {
+    // a thin line opens out behind the title
+    const lw = 360 * Math.min(1, b.t / 0.6);
+    ctx.fillStyle = 'rgba(150,200,255,0.5)';
+    ctx.fillRect(W / 2 - lw, y + 32, lw * 2, 1.5);
+    text(ctx, b.title, W / 2, y, { size: 46, weight: 800, align: 'center', base: 'middle', spacing: 10 });
+    if (b.sub) text(ctx, b.sub, W / 2, y + 58, { size: 19, weight: 600, align: 'center', base: 'middle', spacing: 4, color: 'rgba(190,215,255,0.9)' });
+  }
+  ctx.globalAlpha = 1;
+}
+
 export function drawMuted(ctx) {
   text(ctx, 'SOUND OFF  ·  M', W / 2, 22, { size: 12, weight: 700, color: 'rgba(170,190,230,0.65)', align: 'center', spacing: 2 });
 }

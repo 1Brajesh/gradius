@@ -45,6 +45,7 @@ About 4–5 minutes long. Its own setting, not borrowed from any existing game.
 
 1. **Open space**: deep blue nebula, waves of small fighters to warm up.
 2. **Ice ring field**: drifting ice chunks you can shoot apart, and turrets on larger rocks.
+   **CHECKPOINT** (losing a ship sends you back to the last checkpoint passed)
 3. **Mid-boss**: a mining rig that sweeps a drill arm and fires rock bursts.
 4. **Crystal canyon**: walls above and below with glowing crystals; enemies come out of side vents.
 5. **Checkpoint**, then a quick high-speed section through a narrowing tunnel.
@@ -72,7 +73,7 @@ gradius/
    src/
     main.js         start-up, game loop
    game.js         the world: collisions, score, lives, game over
-   waves.js        temporary test waves (replaced by stage1.js in step 3)
+   stage.js         runs a stage: events by distance, checkpoints, rewind
     config.js       screen size, shared helpers
     background.js   sky, nebula, star layers
     input.js        keyboard + controller
@@ -82,8 +83,8 @@ gradius/
     powerups.js     the meter
     enemies.js      enemy types
     bosses.js       mid-boss + boss
-    stage1.js       the timeline: what appears when
-    terrain.js      canyon walls + collisions
+   stage1.js        Stage 1: wall shapes, speed, and what appears when
+   terrain.js       canyon and tunnel walls, crystals
     fx.js           particles, explosions, screen shake
     ui.js           score, lives, meter, menus
   wrangler.toml     Cloudflare deploy settings
@@ -94,7 +95,7 @@ gradius/
 1. ✅ **Fly and shoot**: ship, controls, main gun, scrolling star layers, scaling to the window.
 2. ✅ **Enemies and the meter**: the first 3 enemy types, energy cells, the power-up meter and all 6 upgrades.
 2.5 ✅ **Sound** (moved up from step 5): synth sound effects for every action, and an original synthwave music track. M mutes.
-3. **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
+3. ✅ **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
 4. **Bosses**: the mining rig mid-boss and the Lighthouse boss.
 5. **Look and feel**: screen shake, more glow and explosion polish, boss music.
 6. **Finish**: title screen, game over, high scores, pause, controller support, tuning difficulty.

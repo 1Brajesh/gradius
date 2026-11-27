@@ -35,12 +35,14 @@ export class Background {
   }
 
   update(dt, speed = SCROLL_SPEED) {
+    // (speed comes from the stage: faster in the tunnel)
     this.pscroll = this.scroll;
     this.scroll += speed * dt;
     this.t += dt;
   }
 
-  draw(ctx, a) {
+  // tint: [r, g, b, alpha] colour wash for the current part of the stage
+  draw(ctx, a, tint) {
     const art = this.art;
     const s = lerp(this.pscroll, this.scroll, a);
 
@@ -50,6 +52,21 @@ export class Background {
     const off = (s * 0.12) % NEBULA_W;
     ctx.drawImage(art.nebula.img, -off, 0, NEBULA_W, H);
     ctx.drawImage(art.nebula.img, NEBULA_W - off, 0, NEBULA_W, H);
+
+    if (tint && tint[3] > 0.002) {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(${tint[0] | 0},${tint[1] | 0},${tint[2] | 0},${tint[3]})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // the ringed planet, very far away, drifting past very slowly
+    const px = 980 - s * 0.045;
+    if (px > -400) {
+      ctx.globalAlpha = 0.9;
+      stamp(ctx, art.planet, px, 250);
+      ctx.globalAlpha = 1;
+    }
 
     ctx.globalCompositeOperation = 'lighter';
     for (const L of this.layers) {

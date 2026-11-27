@@ -8,7 +8,9 @@ import { Player, HIT_R, SHIELD_R } from './player.js';
 import { Particles, explode, sparks } from './fx.js';
 import { Meter } from './powerups.js';
 import { makeEnemy, updateEnemies, drawEnemies } from './enemies.js';
-import { Waves } from './waves.js';
+import { Stage } from './stage.js';
+import { STAGE1 } from './stage1.js';
+import { Terrain } from './terrain.js';
 import * as ui from './ui.js';
 import { SILENT } from './audio.js';
 
@@ -32,7 +34,8 @@ export class Game {
     this.bg = new Background(art);
     this.meter = new Meter();
     this.player = new Player(art, this.fx, sound);
-    this.waves = new Waves();
+    this.stage = new Stage(STAGE1);
+    this.terrain = new Terrain(art, STAGE1.shape);
     this.hiscore = loadHi();
     this.time = 0;
     this.hint = 1;
@@ -50,16 +53,46 @@ export class Game {
     this.state = 'play';       // 'play' | 'dead' | 'over'
     this.stateT = 0;
     this.newHigh = false;
+    this.bannerInfo = null;
     this.player.reset();
     this.meter.reset();
-    this.waves.reset();
+    this.stage.loops = 0;
+    this.stage.reset();
+  }
+
+  // clear the screen of enemies and shots (used when restarting at a checkpoint)
+  clearField() {
+    this.enemies = [];
+    this.enemyShots = [];
+    this.cells = [];
+    this.popups = [];
+    this.player.shots = [];
   }
 
   // ----- things other parts of the game call -----
   spawn(type, props) {
     const e = makeEnemy(type, props);
+    if (e.side && !e.anchor) {
+      // stand it on the floor or hang it from the ceiling
+      const w = this.stage.walls(e.x);
+      const lift = e.type === 'hatch' ? 16 : 6;
+      e.y = e.py = e.side === 'ceiling' ? w.top + lift : w.bot - lift;
+    }
     this.enemies.push(e);
     return e;
+  }
+
+  banner(title, sub = '', small = false) {
+    this.bannerInfo = { title, sub, small, t: 0 };
+  }
+
+  onCheckpoint() {
+    this.banner('CHECKPOINT', '', true);
+  }
+
+  onLoop() {
+    this.clearField();
+    this.banner('STAGE 1', `LOOP ${this.stage.loops + 1}`);
   }
 
   enemyShot(x, y, angle, speed) {
@@ -85,8 +118,9 @@ export class Game {
     this.time += dt;
     this.stateT += dt;
 
-    this.bg.update(dt);
-    if (this.state !== 'over') this.waves.update(dt, this);
+    this.bg.update(dt, this.stage.speed * 0.6);
+    if (this.state !== 'over') this.stage.update(dt, this);
+    if (this.bannerInfo && (this.bannerInfo.t += dt) > 3.4) this.bannerInfo = null;
 
     if (input.take('power') && player.alive) {
       const slot = this.meter.take(player);
@@ -131,6 +165,8 @@ export class Game {
     if (this.state === 'dead' && this.stateT > 2) {
       if (this.spares > 0) {
         this.spares--;
+        this.stage.rewind();
+        this.clearField();
         player.spawn();
         this.sound.play('respawn');
         this.state = 'play';
@@ -151,11 +187,30 @@ export class Game {
   collide() {
     const p = this.player;
 
+    // player shots -> walls
+    for (const s of p.shots) {
+      const hx = s.kind === 'lance' ? s.x + s.half : s.x;
+      const w = this.stage.walls(hx);
+      if (s.y < w.top || s.y > w.bot) {
+        s.dead = true;
+        sparks(this.fx, this.art, hx, s.y, 3, this.art.glowViolet);
+      }
+    }
+
     // player shots -> enemies
     for (const s of p.shots) {
       if (s.dead) continue;
       for (const e of this.enemies) {
         if (e.dead) continue;
+        if (e.solid) {
+          // ice rocks stop shots (the Lance beam passes over them)
+          if (s.kind !== 'lance' && (e.x - s.x) ** 2 + (e.y - s.y) ** 2 < e.r * e.r) {
+            s.dead = true;
+            sparks(this.fx, this.art, s.x, s.y, 3, this.art.glowCyan);
+            break;
+          }
+          continue;
+        }
         if (s.kind === 'lance') {
           // the beam passes through, hurting each enemy once
           if (s.hit.has(e.id)) continue;
@@ -176,10 +231,29 @@ export class Game {
       }
     }
 
+    // enemy shots -> walls and ice rocks
+    for (const s of this.enemyShots) {
+      const w = this.stage.walls(s.x);
+      if (s.y < w.top || s.y > w.bot) s.dead = true;
+      for (const e of this.enemies) {
+        if (e.solid && (e.x - s.x) ** 2 + (e.y - s.y) ** 2 < e.r * e.r) s.dead = true;
+      }
+    }
+
     if (!p.alive) return;
+
+    // the ship against walls: check a few points along its length
+    for (const ox of [-30, -10, 12, 36]) {
+      const w = this.stage.walls(p.x + ox);
+      if (p.y - 7 < w.top || p.y + 7 > w.bot) {
+        this.hitPlayer();
+        if (!p.alive) return;
+      }
+    }
 
     // enemy shots -> player (the shield catches them from the front)
     for (const s of this.enemyShots) {
+      if (s.dead) continue;
       const dx = s.x - p.x;
       const dy = s.y - p.y;
       const d2 = dx * dx + dy * dy;
@@ -203,6 +277,14 @@ export class Game {
       const dx = e.x - p.x;
       const dy = e.y - p.y;
       const d2 = dx * dx + dy * dy;
+      if (e.solid) {
+        // ice rocks: the shield doesn't help here
+        if (d2 < (e.r + HIT_R * 0.5) ** 2) {
+          this.hitPlayer();
+          if (!p.alive) return;
+        }
+        continue;
+      }
       if (p.shieldHP > 0 && dx > -6 && d2 < (SHIELD_R + e.r * 0.6) ** 2) {
         p.shieldHit();
         this.sound.play('shield');
@@ -244,6 +326,20 @@ export class Game {
     explode(this.fx, this.art, e.x, e.y, e.boom);
     this.sound.play('boom', e.boom);
     if (e.drops) this.dropCell(e.x, e.y);
+    if (e.type === 'shard' && e.size === 3) {
+      // big ice breaks into three smaller pieces
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * Math.PI * 2 + Math.random();
+        this.spawn('shard', {
+          size: 2,
+          x: e.x,
+          y: e.y,
+          vx: e.vx + Math.cos(a) * 110,
+          vy: Math.sin(a) * 110,
+          spin: (Math.random() - 0.5) * 3,
+        });
+      }
+    }
     if (e.group && ++e.group.killed === e.group.total) {
       this.dropCell(e.x, e.y);
       this.popup('+' + 500, e.x, e.y - 24);
@@ -273,7 +369,9 @@ export class Game {
   // ----- drawing -----
   draw(ctx, a) {
     const art = this.art;
-    this.bg.draw(ctx, a);
+    const pos = lerp(this.stage.ppos, this.stage.pos, a);
+    this.bg.draw(ctx, a, this.stage.tint());
+    this.terrain.draw(ctx, pos, this.time);
 
     // energy cells: spin and pulse
     for (const c of this.cells) {
@@ -298,6 +396,7 @@ export class Game {
     this.player.draw(ctx, a);
 
     ui.drawPopups(ctx, this.popups);
+    if (this.bannerInfo) ui.drawBanner(ctx, this.bannerInfo);
     stamp(ctx, art.vignette, W / 2, H / 2);
     ui.drawHud(ctx, this);
     if (this.sound.muted) ui.drawMuted(ctx);

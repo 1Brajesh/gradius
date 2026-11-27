@@ -240,7 +240,7 @@ export class Player {
     let best = null;
     let bestD = Infinity;
     for (const e of enemies) {
-      if (e.dead || e.x > W + 10 || e.x < s.x - 40) continue;
+      if (e.dead || e.solid || e.x > W + 10 || e.x < s.x - 40) continue;
       const d = (e.x - s.x) ** 2 + (e.y - s.y) ** 2;
       if (d < bestD) { bestD = d; best = e; }
     }
