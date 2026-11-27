@@ -12,4 +12,6 @@ Then open http://localhost:8000 in Safari or Chrome.
 (The game uses JavaScript modules, which browsers won't load straight from a file, so it needs this little local server.)
 
 ## Controls
-Move: arrow keys / WASD · Fire: Z / Space · Pause: P / Esc
+Move: arrow keys / WASD · Fire: Z / Space · Take power-up: X / Shift · Pause: P / Esc
+
+Live at https://starwake.brajesh.com

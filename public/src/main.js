@@ -7,11 +7,9 @@
 
 import { W, H, STEP } from './config.js';
 import { Input } from './input.js';
-import { buildArt, stamp } from './art.js';
-import { Background } from './background.js';
-import { Player } from './player.js';
-import { Particles } from './fx.js';
-import { drawHint, drawPause } from './ui.js';
+import { buildArt } from './art.js';
+import { Game } from './game.js';
+import { drawPause } from './ui.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -35,39 +33,22 @@ window.addEventListener('resize', resize);
 resize();
 
 const input = new Input();
-const art = buildArt();
-const fx = new Particles();
-const bg = new Background(art);
-const player = new Player(art, fx);
+const game = new Game(buildArt(), input);
 
 let paused = false;
-let time = 0;          // seconds of play
-let hint = 1;          // controls hint visibility, fades out
+let fade = 0; // fade in from black at the start
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) paused = true;
 });
 window.addEventListener('blur', () => { paused = true; });
 
-function update(dt) {
-  time += dt;
-  bg.update(dt);
-  player.update(dt, input);
-  fx.update(dt);
-  if (time > 7 || (input.touched && time > 3)) hint = Math.max(0, hint - dt * 1.5);
-}
-
 function render(a) {
   ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
   ctx.imageSmoothingQuality = 'high';
-  bg.draw(ctx, a);
-  fx.draw(ctx, a);
-  player.draw(ctx, a);
-  stamp(ctx, art.vignette, W / 2, H / 2);
-  drawHint(ctx, hint);
-  // fade in from black at the start
-  if (time < 0.8) {
-    ctx.fillStyle = `rgba(0,0,0,${1 - time / 0.8})`;
+  game.draw(ctx, a);
+  if (fade < 0.8) {
+    ctx.fillStyle = `rgba(0,0,0,${1 - fade / 0.8})`;
     ctx.fillRect(0, 0, W, H);
   }
   if (paused) drawPause(ctx);
@@ -86,7 +67,8 @@ function frame(nowMs) {
   if (!paused) {
     acc += dt;
     while (acc >= STEP) {
-      update(STEP);
+      game.update(STEP);
+      fade += STEP;
       acc -= STEP;
     }
   }

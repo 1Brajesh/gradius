@@ -33,7 +33,7 @@ Shoot down certain enemies and they drop **energy cells**. Each cell moves the h
 |---|---|
 | 1. Thrust | Ship moves faster (up to 4 levels) |
 | 2. Seekers | Small missiles that curve toward nearby enemies |
-| 3. Fork | A second shot angled up and back |
+| 3. Fork | Two extra shots that fan out up and down |
 | 4. Lance | Swaps the main gun for a long piercing beam |
 | 5. Wingman | A glowing drone that copies your moves and shots (up to 3) |
 | 6. Aegis | A front shield that soaks up hits and slowly wears away |
@@ -71,6 +71,8 @@ gradius/
    style.css
    src/
     main.js         start-up, game loop
+   game.js         the world: collisions, score, lives, game over
+   waves.js        temporary test waves (replaced by stage1.js in step 3)
     config.js       screen size, shared helpers
     background.js   sky, nebula, star layers
     input.js        keyboard + controller
@@ -90,7 +92,7 @@ gradius/
 
 ## Steps (each one is playable)
 1. ✅ **Fly and shoot**: ship, controls, main gun, scrolling star layers, scaling to the window.
-2. **Enemies and the meter**: the first 3 enemy types, energy cells, the power-up meter and all 6 upgrades.
+2. ✅ **Enemies and the meter**: the first 3 enemy types, energy cells, the power-up meter and all 6 upgrades.
 3. **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
 4. **Bosses**: the mining rig mid-boss and the Lighthouse boss.
 5. **Look and sound**: glow, explosions, screen shake, sound effects, music.

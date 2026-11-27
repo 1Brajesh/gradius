@@ -41,6 +41,12 @@ export class Input {
     return false;
   }
 
+  // Forget presses made earlier (e.g. so a fire press during play
+  // doesn't instantly restart from the game-over screen).
+  clear() {
+    this.hits.clear();
+  }
+
   // True once per press, then cleared.
   take(action) {
     if (!this.hits.has(action)) return false;
