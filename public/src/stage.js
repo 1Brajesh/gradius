@@ -10,6 +10,7 @@ export class Stage {
   }
 
   reset() {
+    this.hold = false;     // true during a boss fight: the stage waits
     this.pos = 0;          // distance travelled, in pixels
     this.ppos = 0;
     this.idx = 0;          // next event to run
@@ -19,7 +20,13 @@ export class Stage {
     this.queue = [];
   }
 
+  // how fast the scenery moves (0 while held for a boss)
   get speed() {
+    return this.hold ? 0 : this.def.speedAt(this.pos);
+  }
+
+  // how fast the starfield moves (keeps going during a boss fight)
+  get skySpeed() {
     return this.def.speedAt(this.pos);
   }
 
@@ -41,6 +48,7 @@ export class Stage {
     const due = this.queue.filter((q) => q.at <= this.clock);
     this.queue = this.queue.filter((q) => q.at > this.clock);
     for (const q of due) q.fn();
+    if (this.hold) return;
 
     const ev = this.def.events;
     while (this.idx < ev.length && ev[this.idx][0] <= this.pos) {
@@ -56,6 +64,7 @@ export class Stage {
   }
 
   rewind() {
+    this.hold = false;
     this.pos = this.ppos = this.checkpoint;
     this.queue = [];
     const i = this.def.events.findIndex((e) => e[0] >= this.checkpoint);

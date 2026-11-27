@@ -111,7 +111,18 @@ export function drawBanner(ctx, b) {
   if (k <= 0) return;
   ctx.globalAlpha = k;
   const y = H * 0.3;
-  if (b.small) {
+  if (b.small === 'warn') {
+    const blink = 0.55 + 0.45 * Math.sin(b.t * 14);
+    ctx.fillStyle = `rgba(255,40,60,${0.12 * k})`;
+    ctx.fillRect(0, y - 40, W, 80);
+    ctx.fillStyle = `rgba(255,80,90,${0.7 * k})`;
+    ctx.fillRect(0, y - 40, W, 2);
+    ctx.fillRect(0, y + 38, W, 2);
+    ctx.globalAlpha = k * blink;
+    text(ctx, b.title, W / 2, y - 4, { size: 48, weight: 900, align: 'center', base: 'middle', spacing: 14, color: '#ff5a64' });
+    ctx.globalAlpha = k;
+    text(ctx, b.sub, W / 2, y + 62, { size: 17, weight: 600, align: 'center', base: 'middle', spacing: 3, color: 'rgba(255,190,190,0.9)' });
+  } else if (b.small) {
     text(ctx, b.title, W / 2, y, { size: 22, weight: 800, align: 'center', base: 'middle', spacing: 8, color: 'rgba(220,235,255,0.95)' });
     if (b.sub) text(ctx, b.sub, W / 2, y + 30, { size: 15, weight: 500, align: 'center', base: 'middle', color: 'rgba(190,205,240,0.85)' });
   } else {
@@ -123,6 +134,31 @@ export function drawBanner(ctx, b) {
     if (b.sub) text(ctx, b.sub, W / 2, y + 58, { size: 19, weight: 600, align: 'center', base: 'middle', spacing: 4, color: 'rgba(190,215,255,0.9)' });
   }
   ctx.globalAlpha = 1;
+}
+
+// Boss name and health, top centre.
+export function drawBossBar(ctx, boss) {
+  const w = 380;
+  const x = (W - w) / 2;
+  const y = 44;
+  text(ctx, boss.name, W / 2, 22, { size: 12, weight: 800, align: 'center', spacing: 3, color: 'rgba(255,200,170,0.9)' });
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, 8, 4);
+  ctx.fillStyle = 'rgba(20,10,20,0.7)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,170,140,0.4)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  const f = Math.max(0, boss.hp / boss.hpMax);
+  if (f > 0) {
+    const g = ctx.createLinearGradient(x, 0, x + w, 0);
+    g.addColorStop(0, '#ff3a4a');
+    g.addColorStop(1, '#ffb347');
+    ctx.beginPath();
+    ctx.roundRect(x + 1, y + 1, (w - 2) * f, 6, 3);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
 }
 
 export function drawMuted(ctx) {

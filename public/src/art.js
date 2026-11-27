@@ -818,8 +818,295 @@ function planet() {
   }, 1);
 }
 
+// ---------- bosses ----------
+function pebble() {
+  return sprite(24, 24, (g) => {
+    drawIce(g, blobPoints(10, rng(5), 7, 0.4), 10, ['#d9c6b0', '#7d6654', '#2e221a'], 'rgba(255,230,200,0.4)');
+  });
+}
+
+// Mining rig hull: origin at the hull's centre. Core socket on the
+// left face at (-104, 4); drill arm pivot underneath at (-50, 48).
+export const RIG = { core: [-104, 4], pivot: [-50, 48], arm: 128 };
+function rigHull() {
+  return sprite(300, 190, (g) => {
+    // exhaust stacks
+    g.fillStyle = '#3a3f4e';
+    g.fillRect(70, -86, 12, 40);
+    g.fillRect(90, -78, 10, 32);
+    g.fillStyle = '#20232e';
+    g.fillRect(70, -88, 12, 5);
+    g.fillRect(90, -80, 10, 5);
+    // cabin
+    g.beginPath();
+    g.roundRect(-22, -84, 84, 40, 6);
+    let gr = g.createLinearGradient(0, -84, 0, -44);
+    gr.addColorStop(0, '#c9ced9');
+    gr.addColorStop(1, '#5a6072');
+    g.fillStyle = gr;
+    g.fill();
+    g.fillStyle = '#0d2a3a';
+    g.fillRect(-14, -74, 66, 12);
+    gr = g.createLinearGradient(-14, 0, 52, 0);
+    gr.addColorStop(0, 'rgba(90,220,255,0.9)');
+    gr.addColorStop(1, 'rgba(90,220,255,0.3)');
+    g.fillStyle = gr;
+    g.fillRect(-12, -72, 62, 8);
+    // main hull
+    const hull = [[-124, -8], [-104, -46], [64, -50], [124, -30], [136, 18], [96, 50], [-92, 50], [-128, 26]];
+    tracePoly(g, hull);
+    gr = g.createLinearGradient(0, -50, 0, 50);
+    gr.addColorStop(0, '#f3c35a');
+    gr.addColorStop(0.45, '#c98a22');
+    gr.addColorStop(1, '#4a2c08');
+    g.fillStyle = gr;
+    g.fill();
+    g.save();
+    g.clip();
+    // hazard stripes along the bottom
+    g.beginPath();
+    g.rect(-140, 30, 290, 14);
+    g.clip();
+    g.fillStyle = '#1b1408';
+    g.fillRect(-140, 30, 290, 14);
+    g.fillStyle = '#f0b531';
+    for (let x = -150; x < 160; x += 20) {
+      g.beginPath();
+      g.moveTo(x, 44);
+      g.lineTo(x + 10, 44);
+      g.lineTo(x + 20, 30);
+      g.lineTo(x + 10, 30);
+      g.closePath();
+      g.fill();
+    }
+    g.restore();
+    g.save();
+    tracePoly(g, hull);
+    g.clip();
+    // panel lines and rivets
+    g.strokeStyle = 'rgba(60,30,0,0.45)';
+    g.lineWidth = 1;
+    for (const x of [-60, -10, 40, 90]) {
+      g.beginPath();
+      g.moveTo(x, -52);
+      g.lineTo(x - 6, 30);
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(60,30,0,0.5)';
+    for (let x = -100; x < 120; x += 16) g.fillRect(x, -40, 2, 2);
+    // shading
+    gr = g.createLinearGradient(-130, 0, 140, 0);
+    gr.addColorStop(0, 'rgba(255,255,255,0.08)');
+    gr.addColorStop(1, 'rgba(0,0,0,0.3)');
+    g.fillStyle = gr;
+    g.fillRect(-140, -60, 290, 120);
+    g.restore();
+    tracePoly(g, hull);
+    g.strokeStyle = 'rgba(255,230,160,0.55)';
+    g.lineWidth = 1.2;
+    g.stroke();
+    // thruster nozzle at the back
+    g.fillStyle = '#2b2f3c';
+    g.beginPath();
+    g.roundRect(130, -16, 16, 32, 4);
+    g.fill();
+    // core socket
+    g.beginPath();
+    g.arc(RIG.core[0], RIG.core[1], 27, 0, Math.PI * 2);
+    g.fillStyle = '#1c1a22';
+    g.fill();
+    g.strokeStyle = '#6b6f80';
+    g.lineWidth = 3;
+    g.stroke();
+    // arm pivot housing
+    g.beginPath();
+    g.arc(RIG.pivot[0], RIG.pivot[1], 15, 0, Math.PI * 2);
+    gr = g.createRadialGradient(RIG.pivot[0] - 4, RIG.pivot[1] - 4, 1, RIG.pivot[0], RIG.pivot[1], 15);
+    gr.addColorStop(0, '#b8bfcf');
+    gr.addColorStop(1, '#2c303d');
+    g.fillStyle = gr;
+    g.fill();
+  }, 2);
+}
+
+function rigCore() {
+  return sprite(48, 48, (g) => {
+    const gr = g.createRadialGradient(-4, -4, 0, 0, 0, 21);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(0.25, '#ffe27a');
+    gr.addColorStop(0.6, '#ff7a1a');
+    gr.addColorStop(1, '#5a1400');
+    g.beginPath();
+    g.arc(0, 0, 21, 0, Math.PI * 2);
+    g.fillStyle = gr;
+    g.fill();
+  });
+}
+
+// Drill bit pointing down (+y). Two frames with shifted grooves = spinning.
+function drill(frame) {
+  return sprite(34, 46, (g) => {
+    g.beginPath();
+    g.moveTo(-14, -18);
+    g.lineTo(14, -18);
+    g.lineTo(0, 22);
+    g.closePath();
+    const gr = g.createLinearGradient(-14, 0, 14, 0);
+    gr.addColorStop(0, '#e9edf5');
+    gr.addColorStop(0.5, '#8b93a7');
+    gr.addColorStop(1, '#2f3443');
+    g.fillStyle = gr;
+    g.fill();
+    g.save();
+    g.clip();
+    g.strokeStyle = 'rgba(20,24,36,0.7)';
+    g.lineWidth = 2;
+    for (let y = -24 + frame * 4; y < 26; y += 8) {
+      g.beginPath();
+      g.moveTo(-16, y);
+      g.lineTo(16, y + 6);
+      g.stroke();
+    }
+    g.restore();
+    g.fillStyle = '#3a3f4e';
+    g.fillRect(-16, -23, 32, 7);
+  });
+}
+
+// The Lighthouse: a striped tower with a lamp housing in the middle.
+// Origin at the lamp. The shutters and lamp are drawn live.
+export const LH = { R: 72, plate: Math.PI / 3, core: 30, housing: 98, towerW: 38, towerH: 300 };
+function lighthouse() {
+  return sprite(320, 660, (g) => {
+    // solar fins on the right
+    for (const s of [-1, 1]) {
+      g.beginPath();
+      g.moveTo(34, s * 105);
+      g.lineTo(132, s * 150);
+      g.lineTo(140, s * 215);
+      g.lineTo(34, s * 175);
+      g.closePath();
+      const gr = g.createLinearGradient(34, 0, 140, 0);
+      gr.addColorStop(0, '#1d2d5a');
+      gr.addColorStop(1, '#0c1430');
+      g.fillStyle = gr;
+      g.fill();
+      g.strokeStyle = 'rgba(120,170,255,0.5)';
+      g.lineWidth = 1;
+      g.stroke();
+      g.save();
+      g.clip();
+      g.strokeStyle = 'rgba(120,170,255,0.18)';
+      for (let x = 50; x < 140; x += 14) {
+        g.beginPath();
+        g.moveTo(x, -400);
+        g.lineTo(x, 400);
+        g.stroke();
+      }
+      for (let y = -240; y < 240; y += 14) {
+        g.beginPath();
+        g.moveTo(30, y);
+        g.lineTo(150, y + s * 20);
+        g.stroke();
+      }
+      g.restore();
+    }
+    // spires
+    for (const s of [-1, 1]) {
+      g.beginPath();
+      g.moveTo(-LH.towerW, s * 200);
+      g.lineTo(-10, s * 300);
+      g.lineTo(10, s * 300);
+      g.lineTo(LH.towerW, s * 200);
+      g.closePath();
+      const gr = g.createLinearGradient(-LH.towerW, 0, LH.towerW, 0);
+      gr.addColorStop(0, '#d9dfeb');
+      gr.addColorStop(1, '#4a5168');
+      g.fillStyle = gr;
+      g.fill();
+      g.fillStyle = '#2a2f40';
+      g.fillRect(-1.5, s * 300 - (s > 0 ? 0 : 22), 3, 22);
+      glowDot(g, 0, s * 322, 6, '255,60,60');
+    }
+    // the striped tower
+    g.save();
+    g.beginPath();
+    g.rect(-LH.towerW, -202, LH.towerW * 2, 404);
+    g.clip();
+    for (let y = -202, i = 0; y < 202; y += 38, i++) {
+      g.fillStyle = i % 2 ? '#c8323c' : '#e9edf5';
+      g.fillRect(-LH.towerW, y, LH.towerW * 2, 38);
+    }
+    const sh = g.createLinearGradient(-LH.towerW, 0, LH.towerW, 0);
+    sh.addColorStop(0, 'rgba(255,255,255,0.25)');
+    sh.addColorStop(0.4, 'rgba(0,0,0,0)');
+    sh.addColorStop(1, 'rgba(0,0,20,0.55)');
+    g.fillStyle = sh;
+    g.fillRect(-LH.towerW, -202, LH.towerW * 2, 404);
+    g.restore();
+    // gun pod ledges
+    for (const s of [-1, 1]) {
+      g.fillStyle = '#4c5570';
+      g.beginPath();
+      g.roundRect(-72, s * 218 - (s < 0 ? 0 : 8) + (s < 0 ? 6 : -6), 46, 8, 2);
+      g.fill();
+    }
+    // lamp housing
+    g.beginPath();
+    g.arc(0, 0, LH.housing, 0, Math.PI * 2);
+    let gr = g.createRadialGradient(-20, -20, 10, 0, 0, LH.housing);
+    gr.addColorStop(0, '#3e4766');
+    gr.addColorStop(1, '#10132a');
+    g.fillStyle = gr;
+    g.fill();
+    g.strokeStyle = 'rgba(200,215,255,0.5)';
+    g.lineWidth = 2;
+    g.stroke();
+    g.beginPath();
+    g.arc(0, 0, LH.core + 6, 0, Math.PI * 2);
+    g.fillStyle = '#07080f';
+    g.fill();
+  }, 2);
+}
+
+function lamp() {
+  return sprite(70, 70, (g) => {
+    const gr = g.createRadialGradient(-5, -5, 0, 0, 0, LH.core);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(0.35, '#fff1b8');
+    gr.addColorStop(0.75, '#ffb02e');
+    gr.addColorStop(1, '#8a3c00');
+    g.beginPath();
+    g.arc(0, 0, LH.core, 0, Math.PI * 2);
+    g.fillStyle = gr;
+    g.fill();
+    // lens rings
+    g.strokeStyle = 'rgba(140,70,0,0.35)';
+    g.lineWidth = 1.2;
+    for (const r of [10, 18, 25]) {
+      g.beginPath();
+      g.arc(0, 0, r, 0, Math.PI * 2);
+      g.stroke();
+    }
+  });
+}
+
+function bossArt() {
+  const hull = rigHull();
+  const tower = lighthouse();
+  return {
+    pebble: withFlash(pebble()),
+    rig: { normal: hull, white: whiteOf(hull) },
+    rigCore: rigCore(),
+    drill: [drill(0), drill(1)],
+    lighthouse: { normal: tower, white: whiteOf(tower) },
+    lamp: lamp(),
+  };
+}
+
 export function buildStageArt() {
   return {
+    ...bossArt(),
     shards: {
       2: [withFlash(shard(2, 11)), withFlash(shard(2, 12))],
       3: [withFlash(shard(3, 21)), withFlash(shard(3, 22))],

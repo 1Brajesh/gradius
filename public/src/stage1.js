@@ -2,10 +2,10 @@
 //
 //   0:00  Open space        fighters, past a ringed planet
 //   0:45  Ice ring field    drifting ice shards and big ice rocks with turrets
-//   1:40  CHECKPOINT        then a heavy wave (the mid-boss arrives in step 4)
+//   1:40  CHECKPOINT        then the Mining Rig (mid-boss) and a wave of fighters
 //   2:03  Crystal canyon    walls above and below, turrets and hatches
 //   3:15  CHECKPOINT        then a high-speed run through a narrowing tunnel
-//   end   The Lighthouse    (the boss arrives in step 4; for now the stage loops)
+//   end   CHECKPOINT        then the Lighthouse (stage boss)
 //
 // Everything is placed by distance travelled. At normal speed the stage
 // moves 150 pixels per second, so T(sec) means "this many seconds in".
@@ -25,7 +25,7 @@ const C0 = T(123);              // canyon walls start rising
 const CP2 = T(195);
 const TUN0 = T(198);            // tunnel begins
 const TUN1 = TUN0 + 11500;      // tunnel ends
-const END = TUN1 + 3600;
+const CP3 = TUN1 + 1400;        // just before the boss
 
 const smooth = (a, b, d) => {
   const t = Math.min(1, Math.max(0, (d - a) / (b - a)));
@@ -160,8 +160,8 @@ const EVENTS = [
   [T(91), (s, g) => { darts(s, g, 0.3); s.after(1.2, () => darts(s, g, 0.72)); }],
   [T(95), (s, g) => { bulb(g, 0.5); shards(s, g, 3); }],
 
-  // heavy wave (the mining-rig mid-boss replaces this in step 4)
-  [T(102), (s, g) => { bulb(g, 0.28); bulb(g, 0.72); }],
+  // mid-boss, then a wave of fighters
+  [T(101), (s, g) => g.startBoss('rig')],
   [T(106), (s, g) => { darts(s, g, 0.4); s.after(0.6, () => darts(s, g, 0.6)); }],
   [T(110), (s, g) => { sweepers(s, g); s.after(1.5, () => sweepers(s, g, PLAY.top + 60, PLAY.bottom - 60, 60)); }],
   [T(114), (s, g) => { bulb(g, 0.5); darts(s, g, 0.15, 30); darts(s, g, 0.85, 30); }],
@@ -198,9 +198,8 @@ const EVENTS = [
   [TUN0 + 8600, (s, g) => trackDarts(s, g, 15)],
   [TUN0 + 9800, (s, g) => hatch(g, 'floor')],
 
-  // the end, for now
-  [TUN1 + 1800, (s, g) => g.banner('THE LIGHTHOUSE', 'The stage boss arrives in the next update')],
-  [END, (s, g) => { s.loop(); g.onLoop(); }],
+  // the stage boss
+  [CP3 + 300, (s, g) => g.startBoss('lighthouse')],
 ];
 
 export const STAGE1 = {
@@ -208,7 +207,7 @@ export const STAGE1 = {
   shape,
   speedAt,
   tintAt,
-  checkpoints: [CP1, CP2],
+  checkpoints: [CP1, CP2, CP3],
   events: EVENTS.sort((a, b) => a[0] - b[0]),
   // the middle of the open space between the walls at distance d
   centreAt(d) {

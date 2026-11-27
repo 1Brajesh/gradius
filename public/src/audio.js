@@ -36,6 +36,14 @@ const LEAD = [
 ];
 const ARP = [0, 1, 2, 3, 2, 1, 2, 3, 0, 1, 2, 3, 2, 3, 1, 2];
 
+// Boss music: D minor - Bb - C - A, driving 16th-note bass, no lead.
+const BOSS_CHORDS = [
+  { root: 26, pad: [50, 53, 57, 62] },
+  { root: 34, pad: [50, 53, 58, 62] },
+  { root: 36, pad: [52, 55, 60, 64] },
+  { root: 33, pad: [49, 52, 57, 61] },
+];
+
 // Song shape: bars 0-3 pads + arp only, then bass and drums join,
 // then the lead plays every other 8 bars.
 function section(bar) {
@@ -46,12 +54,14 @@ function section(bar) {
 
 // Shortest gap allowed between repeats of the same effect, so
 // rapid fire or a chain of explosions doesn't turn into a roar.
-const THROTTLE = { shot: 0.05, lance: 0.08, enemyShot: 0.09, hit: 0.035, boom: 0.03, seeker: 0.1 };
+const THROTTLE = { shot: 0.05, lance: 0.08, enemyShot: 0.09, hit: 0.035, boom: 0.03, seeker: 0.1, rocks: 0.2 };
 
 export class Sound {
   constructor() {
     this.ctx = null;
     this.paused = false;
+    this.mood = 'stage';
+    this.nextMood = 'stage';
     this.last = {};
     try { this.muted = localStorage.getItem(MUTE_KEY) === '1'; } catch { this.muted = false; }
   }
@@ -239,6 +249,13 @@ export class Sound {
     }
   }
 
+  // 'stage' or 'boss'. Switches at the start of the next bar so the
+  // beat never stumbles.
+  setMood(m) {
+    this.nextMood = m;
+    if (this.ctx) this.fadeMusic(0.42, 0.5);
+  }
+
   fadeMusic(to, secs) {
     if (!this.ctx) return;
     this.music.gain.cancelScheduledValues(this.now);
@@ -255,6 +272,8 @@ export class Sound {
   }
 
   playStep(bar, step, t) {
+    if (step === 0) this.mood = this.nextMood;
+    if (this.mood === 'boss') return this.bossStep(bar, step, t);
     const chord = CHORDS[bar % 4];
     const { groove, lead } = section(bar);
     const music = this.music;
@@ -284,6 +303,23 @@ export class Sound {
         if (s === step) this.leadNote(mtof(n), t, len * S16);
       }
     }
+  }
+
+  bossStep(bar, step, t) {
+    const chord = BOSS_CHORDS[bar % 4];
+    const music = this.music;
+    if (step === 0) this.pad(chord.pad, t, S16 * 16);
+    // bass on every 16th, jumping octaves
+    const n = chord.root + ([0, 0, 12, 0, 0, 12, 0, 7][step % 8]);
+    this.voice({ type: 'sawtooth', f: mtof(n), at: t, dur: S16 * 0.9, vol: 0.14, cutoff: 700, pluck: true, dest: music });
+    // high, urgent arpeggio
+    const arpNote = chord.pad[ARP[(step * 3) % 16] % 4] + 24;
+    this.voice({ type: 'square', f: mtof(arpNote), at: t, dur: S16 * 0.6, vol: 0.025, cutoff: 3200, dest: music, echo: 0.4 });
+    // drums
+    if (step % 4 === 0) this.kick(t);
+    if (step === 4 || step === 12) this.snare(t);
+    if (bar % 4 === 3 && step >= 12) this.snare(t);
+    this.noise({ at: t, dur: 0.03, vol: step % 2 ? 0.035 : 0.06, type: 'highpass', f0: 8000, dest: music });
   }
 
   // a soft held chord: two slightly detuned saws per note
@@ -445,6 +481,34 @@ const SFX = {
     this.tone({ type: 'sine', f0: 220, f1: 990, dur: 0.5, vol: 0.06, attack: 0.15, send: 0.4 });
     this.noise({ dur: 0.5, vol: 0.05, type: 'bandpass', f0: 600, f1: 5000, q: 1.5, attack: 0.2 });
   },
+  rocks() {
+    this.noise({ dur: 0.35, vol: 0.25, type: 'lowpass', f0: 900, f1: 200, q: 2, rate: 0.6 });
+    this.tone({ type: 'square', f0: 90, f1: 50, dur: 0.2, vol: 0.08, cutoff: 400 });
+  },
+  warning() {
+    const t = this.now;
+    for (let i = 0; i < 6; i++) {
+      this.tone({ type: 'square', f0: i % 2 ? 660 : 880, dur: 0.24, vol: 0.06, at: t + i * 0.25, cutoff: 2000, attack: 0.01 });
+    }
+  },
+  charge() {
+    this.tone({ type: 'sawtooth', f0: 120, f1: 1400, dur: 1.0, vol: 0.06, cutoff: 2500, attack: 0.3, send: 0.3 });
+  },
+  laser() {
+    this.noise({ dur: 0.8, vol: 0.22, type: 'bandpass', f0: 3000, f1: 400, q: 0.8, send: 0.4 });
+    this.tone({ type: 'sawtooth', f0: 220, f1: 110, dur: 0.75, vol: 0.12, cutoff: 1800 });
+  },
+  phase() {
+    this.tone({ type: 'sawtooth', f0: 60, f1: 30, dur: 0.9, vol: 0.18, cutoff: 600, send: 0.4 });
+  },
+  clear() {
+    const t = this.now + 1;
+    [72, 76, 79, 84, 79, 84, 88].forEach((n, i) => {
+      const len = i === 6 ? 0.9 : 0.16;
+      this.tone({ type: 'square', f0: mtof(n), dur: len, vol: 0.05, at: t + i * 0.14, cutoff: 3200, send: 0.4 });
+      this.tone({ type: 'triangle', f0: mtof(n - 12), dur: len, vol: 0.06, at: t + i * 0.14, send: 0.3 });
+    });
+  },
   gameover() {
     const t = this.now + 0.3;
     [69, 65, 62, 57].forEach((n, i) => this.tone({ type: 'triangle', f0: mtof(n), dur: 0.6, vol: 0.08, at: t + i * 0.32, send: 0.6, attack: 0.02 }));
@@ -453,5 +517,5 @@ const SFX = {
 
 // Stand-in used when there's no sound (tests, very old browsers).
 export const SILENT = {
-  play() {}, duck() {}, fadeMusic() {}, startMusic() {}, toggleMute() {}, setPaused() {}, unlock() {}, muted: false,
+  play() {}, duck() {}, fadeMusic() {}, startMusic() {}, toggleMute() {}, setPaused() {}, unlock() {}, setMood() {}, muted: false,
 };

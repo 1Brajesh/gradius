@@ -49,6 +49,7 @@ About 4–5 minutes long. Its own setting, not borrowed from any existing game.
 3. **Mid-boss**: a mining rig that sweeps a drill arm and fires rock bursts.
 4. **Crystal canyon**: walls above and below with glowing crystals; enemies come out of side vents.
 5. **Checkpoint**, then a quick high-speed section through a narrowing tunnel.
+   **CHECKPOINT**
 6. **Boss: the Lighthouse**: a big station whose rotating shutters open to show its weak core. It has 3 attack phases, and the attacks change as it takes damage.
 
 ### Enemies (first set)
@@ -82,7 +83,7 @@ gradius/
     player.js       ship, weapons, wingmen, shield
     powerups.js     the meter
     enemies.js      enemy types
-    bosses.js       mid-boss + boss
+   bosses.js        Mining Rig (mid-boss) + the Lighthouse (stage boss)
    stage1.js        Stage 1: wall shapes, speed, and what appears when
    terrain.js       canyon and tunnel walls, crystals
     fx.js           particles, explosions, screen shake
@@ -96,7 +97,7 @@ gradius/
 2. ✅ **Enemies and the meter**: the first 3 enemy types, energy cells, the power-up meter and all 6 upgrades.
 2.5 ✅ **Sound** (moved up from step 5): synth sound effects for every action, and an original synthwave music track. M mutes.
 3. ✅ **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
-4. **Bosses**: the mining rig mid-boss and the Lighthouse boss.
+4. ✅ **Bosses**: the mining rig mid-boss and the Lighthouse boss.
 5. **Look and feel**: screen shake, more glow and explosion polish, boss music.
 6. **Finish**: title screen, game over, high scores, pause, controller support, tuning difficulty.
 7. **Go live** on Cloudflare.

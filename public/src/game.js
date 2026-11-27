@@ -11,6 +11,7 @@ import { makeEnemy, updateEnemies, drawEnemies } from './enemies.js';
 import { Stage } from './stage.js';
 import { STAGE1 } from './stage1.js';
 import { Terrain } from './terrain.js';
+import { MiningRig, Lighthouse } from './bosses.js';
 import * as ui from './ui.js';
 import { SILENT } from './audio.js';
 
@@ -54,6 +55,9 @@ export class Game {
     this.stateT = 0;
     this.newHigh = false;
     this.bannerInfo = null;
+    this.boss = null;
+    this.whiteFlash = 0;
+    this.sound.setMood('stage');
     this.player.reset();
     this.meter.reset();
     this.stage.loops = 0;
@@ -95,6 +99,44 @@ export class Game {
     this.banner('STAGE 1', `LOOP ${this.stage.loops + 1}`);
   }
 
+  // ----- bosses -----
+  startBoss(kind) {
+    this.stage.hold = true;
+    if (kind === 'rig') {
+      this.boss = new MiningRig(this);
+      return;
+    }
+    // the stage boss gets a warning first
+    this.banner('WARNING', 'Huge energy reading ahead', 'warn');
+    this.sound.play('warning');
+    this.sound.setMood('boss');
+    this.stage.after(3, () => { this.boss = new Lighthouse(this); });
+  }
+
+  onBossDefeated(boss) {
+    this.boss = null;
+    if (boss instanceof MiningRig) {
+      this.stage.hold = false;
+      for (let i = 0; i < 3; i++) this.dropCell(boss.core.x + 40 * i, boss.core.y - 30 + 30 * i);
+      return;
+    }
+    // stage clear!
+    this.addScore(10000);
+    this.sound.play('clear');
+    this.stage.after(1.2, () => this.banner('STAGE CLEAR', 'Bonus +10,000'));
+    this.stage.after(7, () => {
+      this.stage.loop();
+      this.sound.setMood('stage');
+      this.onLoop();
+    });
+  }
+
+  onBossLeft() {
+    this.boss = null;
+    this.stage.hold = false;
+    this.banner('IT GOT AWAY', '', true);
+  }
+
   enemyShot(x, y, angle, speed) {
     this.enemyShots.push({ x, y, px: x, py: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed });
     this.sound.play('enemyShot');
@@ -118,8 +160,10 @@ export class Game {
     this.time += dt;
     this.stateT += dt;
 
-    this.bg.update(dt, this.stage.speed * 0.6);
+    this.bg.update(dt, this.stage.skySpeed * 0.6);
     if (this.state !== 'over') this.stage.update(dt, this);
+    if (this.boss) this.boss.update(dt, this);
+    this.whiteFlash = Math.max(0, this.whiteFlash - dt * 1.2);
     if (this.bannerInfo && (this.bannerInfo.t += dt) > 3.4) this.bannerInfo = null;
 
     if (input.take('power') && player.alive) {
@@ -165,6 +209,9 @@ export class Game {
     if (this.state === 'dead' && this.stateT > 2) {
       if (this.spares > 0) {
         this.spares--;
+        if (this.boss) this.boss.gone = true;
+        this.boss = null;
+        this.sound.setMood('stage');
         this.stage.rewind();
         this.clearField();
         player.spawn();
@@ -194,6 +241,30 @@ export class Game {
       if (s.y < w.top || s.y > w.bot) {
         s.dead = true;
         sparks(this.fx, this.art, hx, s.y, 3, this.art.glowViolet);
+      }
+    }
+
+    // player shots -> boss
+    const boss = this.boss;
+    if (boss) {
+      for (const s of p.shots) {
+        if (s.dead) continue;
+        const hx = s.kind === 'lance' ? s.x + s.half : s.x;
+        // check halfway along the last step too, so fast shots can't skip a shutter
+        let hit = boss.shotHit(hx, s.y) ?? boss.shotHit((hx + s.px + (hx - s.x)) / 2, (s.y + s.py) / 2);
+        if (!hit) continue;
+        if (hit === 'core') {
+          if (s.kind === 'lance') {
+            if (s.hit.has('boss')) continue;
+            s.hit.add('boss');
+          } else {
+            s.dead = true;
+          }
+          boss.damage(s.dmg, hx, s.y);
+        } else {
+          s.dead = true;
+          sparks(this.fx, this.art, hx, s.y, 2, this.art.glowWhite);
+        }
       }
     }
 
@@ -249,6 +320,12 @@ export class Game {
         this.hitPlayer();
         if (!p.alive) return;
       }
+    }
+
+    // the boss's body and beam
+    if (boss && (boss.touches(p.x, p.y) || (boss.beamHits && boss.beamHits(p.x, p.y)))) {
+      this.hitPlayer();
+      if (!p.alive) return;
     }
 
     // enemy shots -> player (the shield catches them from the front)
@@ -385,6 +462,7 @@ export class Game {
       ctx.restore();
     }
 
+    if (this.boss) this.boss.draw(ctx, a, art);
     drawEnemies(ctx, this.enemies, a, art);
 
     ctx.globalCompositeOperation = 'lighter';
@@ -398,7 +476,12 @@ export class Game {
     ui.drawPopups(ctx, this.popups);
     if (this.bannerInfo) ui.drawBanner(ctx, this.bannerInfo);
     stamp(ctx, art.vignette, W / 2, H / 2);
+    if (this.whiteFlash > 0) {
+      ctx.fillStyle = `rgba(255,250,235,${0.85 * this.whiteFlash})`;
+      ctx.fillRect(0, 0, W, H);
+    }
     ui.drawHud(ctx, this);
+    if (this.boss && !this.boss.dying && this.boss.t > 1) ui.drawBossBar(ctx, this.boss);
     if (this.sound.muted) ui.drawMuted(ctx);
     ui.drawHint(ctx, this.hint);
     if (this.state === 'over') ui.drawGameOver(ctx, this);

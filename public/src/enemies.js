@@ -16,6 +16,7 @@ const TYPES = {
   mite:    { r: 8, hp: 1, score: 50, boom: 0.5 },
   shard:   { r: 26, hp: 4, score: 150, boom: 0.9 },
   floe:    { r: 80, hp: Infinity, score: 0, boom: 0, solid: true },
+  pebble:  { r: 10, hp: 2, score: 30, boom: 0.5 },
 };
 const SHARD = {
   3: { r: 24, hp: 4, score: 150, boom: 0.9 },
@@ -50,9 +51,11 @@ export function makeEnemy(type, props = {}) {
   if (type === 'turret') { e.fire = 1 + Math.random(); e.aim = e.side === 'ceiling' ? Math.PI / 2 : -Math.PI / 2; }
   if (type === 'hatch') { e.cycle = 0; e.open = 0; e.rel = 0; }
   if (e.anchor) {
-    // sit on top of an ice rock
-    e.ox = 0;
-    e.oy = -FLOE_R[e.anchor.variant] * FLOE_TOP - 6;
+    if (e.oy === undefined) {
+      // sit on top of an ice rock
+      e.ox = 0;
+      e.oy = -FLOE_R[e.anchor.variant] * FLOE_TOP - 6;
+    }
     e.x = e.anchor.x + e.ox;
     e.y = e.anchor.y + e.oy;
   }
@@ -179,6 +182,14 @@ const BEHAVIOUR = {
   // Tumbling ice. Big ones break into smaller ones (see game.js).
   shard(e, dt, world) {
     e.x += (e.vx - world.stage.speed * 0.4) * dt;
+    e.y += e.vy * dt;
+    e.angle += e.spin * dt;
+  },
+
+  // Rocks thrown by the mining rig: they arc down under gravity.
+  pebble(e, dt) {
+    e.vy += 230 * dt;
+    e.x += e.vx * dt;
     e.y += e.vy * dt;
     e.angle += e.spin * dt;
   },

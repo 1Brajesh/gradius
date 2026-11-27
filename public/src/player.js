@@ -224,7 +224,7 @@ export class Player {
     for (const s of this.shots) {
       s.px = s.x;
       s.py = s.y;
-      if (s.kind === 'seeker') this.steer(s, dt, world.enemies);
+      if (s.kind === 'seeker') this.steer(s, dt, world);
       s.x += s.vx * dt;
       s.y += s.vy * dt;
     }
@@ -234,7 +234,8 @@ export class Player {
   }
 
   // Seekers turn toward the nearest enemy ahead of them.
-  steer(s, dt, enemies) {
+  steer(s, dt, world) {
+    const enemies = world.enemies;
     s.life -= dt;
     if (s.life <= 0) { s.dead = true; return; }
     let best = null;
@@ -243,6 +244,12 @@ export class Player {
       if (e.dead || e.solid || e.x > W + 10 || e.x < s.x - 40) continue;
       const d = (e.x - s.x) ** 2 + (e.y - s.y) ** 2;
       if (d < bestD) { bestD = d; best = e; }
+    }
+    const boss = world.boss;
+    if (boss && boss.hp > 0 && boss.t > 3) {
+      const c = boss.core;
+      const d = (c.x - s.x) ** 2 + (c.y - s.y) ** 2;
+      if (d < bestD) { bestD = d; best = c; }
     }
     const a = Math.atan2(s.vy, s.vx);
     const want = best ? Math.atan2(best.y - s.y, best.x - s.x) : 0;
