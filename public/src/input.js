@@ -9,6 +9,7 @@ const BINDINGS = {
   fire:  ['KeyZ', 'Space'],
   power: ['KeyX', 'ShiftLeft', 'ShiftRight'],
   pause: ['KeyP', 'Escape'],
+  mute:  ['KeyM'],
 };
 
 export class Input {

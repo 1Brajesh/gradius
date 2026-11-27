@@ -10,6 +10,7 @@ import { Meter } from './powerups.js';
 import { makeEnemy, updateEnemies, drawEnemies } from './enemies.js';
 import { Waves } from './waves.js';
 import * as ui from './ui.js';
+import { SILENT } from './audio.js';
 
 const START_SPARES = 2;        // extra ships besides the one you're flying
 const CELL_PICKUP_R = 36;
@@ -23,13 +24,14 @@ function saveHi(n) {
 }
 
 export class Game {
-  constructor(art, input) {
+  constructor(art, input, sound = SILENT) {
     this.art = art;
     this.input = input;
+    this.sound = sound;
     this.fx = new Particles();
     this.bg = new Background(art);
     this.meter = new Meter();
-    this.player = new Player(art, this.fx);
+    this.player = new Player(art, this.fx, sound);
     this.waves = new Waves();
     this.hiscore = loadHi();
     this.time = 0;
@@ -38,6 +40,7 @@ export class Game {
   }
 
   newGame() {
+    if (this.state === 'over') this.sound.startMusic();
     this.score = 0;
     this.spares = START_SPARES;
     this.enemies = [];
@@ -61,6 +64,7 @@ export class Game {
 
   enemyShot(x, y, angle, speed) {
     this.enemyShots.push({ x, y, px: x, py: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed });
+    this.sound.play('enemyShot');
   }
 
   popup(text, x, y, rgb = '255,220,140') {
@@ -89,6 +93,9 @@ export class Game {
       if (slot) {
         this.popup(slot.label, player.x, player.y - 36, '150,230,255');
         this.fx.ring(player.x, player.y, 20, 70, 0.35, '150,230,255');
+        this.sound.play('power');
+      } else if (this.meter.cursor >= 0) {
+        this.sound.play('deny');
       }
     }
     this.meter.update(dt);
@@ -125,12 +132,15 @@ export class Game {
       if (this.spares > 0) {
         this.spares--;
         player.spawn();
+        this.sound.play('respawn');
         this.state = 'play';
       } else {
         this.state = 'over';
         this.stateT = 0;
         saveHi(this.hiscore);
         input.clear();
+        this.sound.play('gameover');
+        this.sound.fadeMusic(0, 2);
       }
     }
     if (this.state === 'over' && this.stateT > 1.2 && input.take('fire')) this.newGame();
@@ -176,6 +186,7 @@ export class Game {
       if (p.shieldHP > 0 && dx > -6 && d2 < SHIELD_R * SHIELD_R) {
         s.dead = true;
         p.shieldHit();
+        this.sound.play('shield');
         sparks(this.fx, this.art, s.x, s.y, 5, this.art.glowBlue);
         continue;
       }
@@ -194,6 +205,7 @@ export class Game {
       const d2 = dx * dx + dy * dy;
       if (p.shieldHP > 0 && dx > -6 && d2 < (SHIELD_R + e.r * 0.6) ** 2) {
         p.shieldHit();
+        this.sound.play('shield');
         this.damage(e, 3, e.x - e.r, e.y);
         continue;
       }
@@ -210,6 +222,7 @@ export class Game {
         c.taken = true;
         this.meter.advance();
         this.addScore(50);
+        this.sound.play('cell');
         sparks(this.fx, this.art, c.x, c.y, 8, this.art.glowAmber);
         this.fx.ring(c.x, c.y, 6, 40, 0.3, '255,210,120');
       }
@@ -221,6 +234,7 @@ export class Game {
     e.flash = 0.07;
     sparks(this.fx, this.art, hx, hy, 3);
     if (e.hp <= 0) this.kill(e);
+    else this.sound.play('hit');
   }
 
   kill(e) {
@@ -228,11 +242,13 @@ export class Game {
     e.dead = true;
     this.addScore(e.score);
     explode(this.fx, this.art, e.x, e.y, e.boom);
+    this.sound.play('boom', e.boom);
     if (e.drops) this.dropCell(e.x, e.y);
     if (e.group && ++e.group.killed === e.group.total) {
       this.dropCell(e.x, e.y);
       this.popup('+' + 500, e.x, e.y - 24);
       this.addScore(500);
+      this.sound.play('bonus');
     }
   }
 
@@ -246,6 +262,8 @@ export class Game {
     p.alive = false;
     explode(this.fx, this.art, p.x, p.y, 2.2);
     this.fx.ring(p.x, p.y, 20, 180, 0.7, '150,220,255');
+    this.sound.play('death');
+    this.sound.duck();
     p.loseUpgrades();
     this.meter.reset();
     this.state = 'dead';
@@ -282,6 +300,7 @@ export class Game {
     ui.drawPopups(ctx, this.popups);
     stamp(ctx, art.vignette, W / 2, H / 2);
     ui.drawHud(ctx, this);
+    if (this.sound.muted) ui.drawMuted(ctx);
     ui.drawHint(ctx, this.hint);
     if (this.state === 'over') ui.drawGameOver(ctx, this);
   }

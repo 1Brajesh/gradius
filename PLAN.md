@@ -77,7 +77,7 @@ gradius/
     background.js   sky, nebula, star layers
     input.js        keyboard + controller
     art.js          code-drawn ships, enemies, effects
-    audio.js        sound effects + music
+   audio.js         sound effects + music
     player.js       ship, weapons, wingmen, shield
     powerups.js     the meter
     enemies.js      enemy types
@@ -93,9 +93,10 @@ gradius/
 ## Steps (each one is playable)
 1. ✅ **Fly and shoot**: ship, controls, main gun, scrolling star layers, scaling to the window.
 2. ✅ **Enemies and the meter**: the first 3 enemy types, energy cells, the power-up meter and all 6 upgrades.
+2.5 ✅ **Sound** (moved up from step 5): synth sound effects for every action, and an original synthwave music track. M mutes.
 3. **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
 4. **Bosses**: the mining rig mid-boss and the Lighthouse boss.
-5. **Look and sound**: glow, explosions, screen shake, sound effects, music.
+5. **Look and feel**: screen shake, more glow and explosion polish, boss music.
 6. **Finish**: title screen, game over, high scores, pause, controller support, tuning difficulty.
 7. **Go live** on Cloudflare.
 

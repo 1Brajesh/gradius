@@ -10,6 +10,7 @@ import { Input } from './input.js';
 import { buildArt } from './art.js';
 import { Game } from './game.js';
 import { drawPause } from './ui.js';
+import { Sound } from './audio.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -33,7 +34,12 @@ window.addEventListener('resize', resize);
 resize();
 
 const input = new Input();
-const game = new Game(buildArt(), input);
+const sound = new Sound();
+const game = new Game(buildArt(), input, sound);
+
+// Browsers only allow sound after the player presses something.
+window.addEventListener('keydown', () => sound.unlock());
+window.addEventListener('pointerdown', () => sound.unlock());
 
 let paused = false;
 let fade = 0; // fade in from black at the start
@@ -63,6 +69,8 @@ function frame(nowMs) {
   last = now;
 
   if (input.take('pause')) paused = !paused;
+  if (input.take('mute')) sound.toggleMute();
+  if (sound.paused !== paused) sound.setPaused(paused);
 
   if (!paused) {
     acc += dt;

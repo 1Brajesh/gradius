@@ -99,9 +99,13 @@ export function drawPopups(ctx, popups) {
 export function drawHint(ctx, alpha) {
   if (alpha <= 0) return;
   ctx.globalAlpha = alpha;
-  text(ctx, 'Move  ←↑↓→ / WASD      Fire  Z / Space      Power-up  X / Shift      Pause  P',
+  text(ctx, 'Move  ←↑↓→ / WASD      Fire  Z / Space      Power-up  X / Shift      Pause  P      Sound  M',
     W / 2, H - 78, { size: 15, weight: 500, color: 'rgba(210,225,255,0.85)', align: 'center', base: 'middle' });
   ctx.globalAlpha = 1;
+}
+
+export function drawMuted(ctx) {
+  text(ctx, 'SOUND OFF  ·  M', W / 2, 22, { size: 12, weight: 700, color: 'rgba(170,190,230,0.65)', align: 'center', spacing: 2 });
 }
 
 export function drawGameOver(ctx, game) {

@@ -25,9 +25,10 @@ const NOSE_Y = 2 * SHIP_SCALE;
 const TAIL_X = -41 * SHIP_SCALE;
 
 export class Player {
-  constructor(art, fx) {
+  constructor(art, fx, sound) {
     this.art = art;
     this.fx = fx;
+    this.sound = sound;
     this.shots = [];
     this.t = 0;
     this.reset();
@@ -182,6 +183,7 @@ export class Player {
   }
 
   fireGuns() {
+    this.sound.play(this.gun === 'lance' ? 'lance' : 'shot');
     for (const { x, y } of this.sources()) {
       if (this.gun === 'lance') {
         this.addShot({ kind: 'lance', x: x + LANCE_HALF, y, vx: 1700, vy: 0, dmg: 1, hit: new Set(), half: LANCE_HALF });
@@ -212,6 +214,7 @@ export class Player {
   }
 
   fireSeekers() {
+    this.sound.play('seeker');
     for (const { x, y } of this.sources()) {
       this.addShot({ kind: 'seeker', x: x - 20, y: y + 10, vx: 160, vy: 190, dmg: 2, life: 2.4 });
     }
