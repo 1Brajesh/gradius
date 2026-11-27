@@ -4,7 +4,7 @@ An original side-scrolling space shooter for the browser. See [PLAN.md](PLAN.md)
 
 ## Play it locally
 ```sh
-cd ~/Documents/Coding/gradius
+cd ~/Documents/Coding/gradius/public
 python3 -m http.server 8000
 ```
 Then open http://localhost:8000 in Safari or Chrome.

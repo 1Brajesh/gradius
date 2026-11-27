@@ -66,9 +66,10 @@ Title → (short how-to-play card on first launch) → Stage → Stage clear / G
 ## Folder layout
 ```
 gradius/
-  index.html        page + canvas
-  style.css
-  src/
+  public/           everything that goes live
+   index.html       page + canvas
+   style.css
+   src/
     main.js         start-up, game loop
     config.js       screen size, shared helpers
     background.js   sky, nebula, star layers
@@ -83,7 +84,7 @@ gradius/
     terrain.js      canyon walls + collisions
     fx.js           particles, explosions, screen shake
     ui.js           score, lives, meter, menus
-  wrangler.jsonc    Cloudflare deploy settings
+  wrangler.toml     Cloudflare deploy settings
   PLAN.md
 ```
 
@@ -98,5 +99,4 @@ gradius/
 
 ## Still to decide
 - Final game name.
-- Web address (for example `starwake.brajesh.com`).
 - Difficulty: arcade-hard, or easier with more lives?
