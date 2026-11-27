@@ -70,6 +70,8 @@ gradius/
   style.css
   src/
     main.js         start-up, game loop
+    config.js       screen size, shared helpers
+    background.js   sky, nebula, star layers
     input.js        keyboard + controller
     art.js          code-drawn ships, enemies, effects
     audio.js        sound effects + music
@@ -86,7 +88,7 @@ gradius/
 ```
 
 ## Steps (each one is playable)
-1. **Fly and shoot**: ship, controls, main gun, scrolling star layers, scaling to the window.
+1. ✅ **Fly and shoot**: ship, controls, main gun, scrolling star layers, scaling to the window.
 2. **Enemies and the meter**: the first 3 enemy types, energy cells, the power-up meter and all 6 upgrades.
 3. **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
 4. **Bosses**: the mining rig mid-boss and the Lighthouse boss.
