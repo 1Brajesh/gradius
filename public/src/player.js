@@ -19,6 +19,9 @@ const SHOT_SPEED = 1500;
 const FORK_ANGLE = 0.3;     // radians
 const LANCE_HALF = 70;      // half the beam's length
 const TRAIL_GAP = 13;       // path steps between each wingman
+// With touch, the ship chases the thumb but can't move faster than this
+// many times its keyboard speed, so Thrust upgrades still matter.
+const DRAG_SPEED = 2.4;
 
 const NOSE_X = 40 * SHIP_SCALE;
 const NOSE_Y = 2 * SHIP_SCALE;
@@ -60,6 +63,8 @@ export class Player {
     this.alive = true;
     this.invuln = 2.2;
     this.history = [];
+    this.pendX = 0;          // thumb movement the ship hasn't caught up with yet
+    this.pendY = 0;
     for (const w of this.wingmen) {
       w.x = w.px = this.x;
       w.y = w.py = this.y;
@@ -111,25 +116,52 @@ export class Player {
     this.shieldFlash = Math.max(0, this.shieldFlash - dt);
     this.shieldCool = Math.max(0, this.shieldCool - dt);
     this.updateShots(dt, world);
+    const touch = input.touchMode && input.takeDrag;
+    const drag = touch ? input.takeDrag() : null;
     if (!this.alive) return;
 
     this.px = this.x;
     this.py = this.y;
+    const minX = PLAY.left + 40;
+    const maxX = PLAY.right - 40;
+    const minY = PLAY.top + 16;
+    const maxY = PLAY.bottom - 16;
 
-    // which way the player is pushing
-    let ix = (input.isDown('right') ? 1 : 0) - (input.isDown('left') ? 1 : 0);
-    let iy = (input.isDown('down') ? 1 : 0) - (input.isDown('up') ? 1 : 0);
-    if (ix && iy) { ix *= Math.SQRT1_2; iy *= Math.SQRT1_2; }
+    let iy;
+    if (touch) {
+      // chase the thumb: add its movement to what's owed, never aiming
+      // past the edges, and cover it as fast as the ship is allowed
+      this.pendX = clamp(this.x + this.pendX + drag.dx, minX, maxX) - this.x;
+      this.pendY = clamp(this.y + this.pendY + drag.dy, minY, maxY) - this.y;
+      const len = Math.hypot(this.pendX, this.pendY);
+      const max = this.speed * DRAG_SPEED * dt;
+      const f = len > max ? max / len : 1;
+      const mx = this.pendX * f;
+      const my = this.pendY * f;
+      this.pendX -= mx;
+      this.pendY -= my;
+      this.x += mx;
+      this.y += my;
+      this.vx = mx / dt;
+      this.vy = my / dt;
+      iy = clamp(this.vy / this.speed, -1, 1);
+    } else {
+      // which way the player is pushing
+      let ix = (input.isDown('right') ? 1 : 0) - (input.isDown('left') ? 1 : 0);
+      iy = (input.isDown('down') ? 1 : 0) - (input.isDown('up') ? 1 : 0);
+      if (ix && iy) { ix *= Math.SQRT1_2; iy *= Math.SQRT1_2; }
 
-    // ease the velocity toward the target: responsive but not twitchy
-    const k = 1 - Math.exp(-dt * 22);
-    this.vx += (ix * this.speed - this.vx) * k;
-    this.vy += (iy * this.speed - this.vy) * k;
-    this.x += this.vx * dt;
-    this.y += this.vy * dt;
+      // ease the velocity toward the target: responsive but not twitchy
+      const k = 1 - Math.exp(-dt * 22);
+      this.vx += (ix * this.speed - this.vx) * k;
+      this.vy += (iy * this.speed - this.vy) * k;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      this.pendX = this.pendY = 0;
+    }
 
-    const nx = clamp(this.x, PLAY.left + 40, PLAY.right - 40);
-    const ny = clamp(this.y, PLAY.top + 16, PLAY.bottom - 16);
+    const nx = clamp(this.x, minX, maxX);
+    const ny = clamp(this.y, minY, maxY);
     if (nx !== this.x) this.vx = 0;
     if (ny !== this.y) this.vy = 0;
     this.x = nx;
@@ -154,7 +186,8 @@ export class Player {
     // weapons
     this.cool -= dt;
     this.seekCool -= dt;
-    if (input.isDown('fire')) {
+    // in touch mode the gun fires by itself
+    if (touch || input.isDown('fire')) {
       if (this.cool <= 0) {
         this.fireGuns();
         this.cool = this.gun === 'lance' ? LANCE_GAP : FIRE_GAP;

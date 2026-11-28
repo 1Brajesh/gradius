@@ -18,12 +18,20 @@ function text(ctx, str, x, y, { size = 16, weight = 600, color = '#eaf2ff', alig
 
 const pad = (n) => String(n).padStart(7, '0');
 
+// On a phone the whole game is shrunk to about half size, so the HUD
+// is drawn bigger in touch mode to stay readable.
+const isTouch = (game) => !!(game.input && game.input.touchMode);
+
 export function drawHud(ctx, game) {
+  const big = isTouch(game);
+  const ls = big ? 16 : 12;
+  const ns = big ? 30 : 24;
+  const ny = big ? 40 : 36;
   // scores
-  text(ctx, 'SCORE', 28, 20, { size: 12, color: 'rgba(170,190,230,0.8)', spacing: 2 });
-  text(ctx, pad(game.score), 28, 36, { size: 24, weight: 700, spacing: 1 });
-  text(ctx, 'HIGH', W - 28, 20, { size: 12, color: 'rgba(170,190,230,0.8)', align: 'right', spacing: 2 });
-  text(ctx, pad(game.hiscore), W - 28, 36, { size: 24, weight: 700, align: 'right', spacing: 1, color: 'rgba(234,242,255,0.75)' });
+  text(ctx, 'SCORE', 28, 20, { size: ls, color: 'rgba(170,190,230,0.8)', spacing: 2 });
+  text(ctx, pad(game.score), 28, ny, { size: ns, weight: 700, spacing: 1 });
+  text(ctx, 'HIGH', W - 28, 20, { size: ls, color: 'rgba(170,190,230,0.8)', align: 'right', spacing: 2 });
+  text(ctx, pad(game.hiscore), W - 28, ny, { size: ns, weight: 700, align: 'right', spacing: 1, color: 'rgba(234,242,255,0.75)' });
 
   // spare ships, bottom left
   const ship = game.art.ship;
@@ -36,11 +44,12 @@ export function drawHud(ctx, game) {
 
 function drawMeter(ctx, game) {
   const { meter, player } = game;
-  const bw = 112;
-  const bh = 32;
+  const big = isTouch(game);
+  const bw = big ? 150 : 112;
+  const bh = big ? 44 : 32;
   const gap = 8;
   const x0 = (W - (SLOTS.length * bw + (SLOTS.length - 1) * gap)) / 2;
-  const y = H - 48;
+  const y = H - bh - 8 - (big ? 0 : 8);
 
   SLOTS.forEach((slot, i) => {
     const x = x0 + i * (bw + gap);
@@ -70,16 +79,16 @@ function drawMeter(ctx, game) {
     const labelColor = on
       ? (can ? '#2a1200' : 'rgba(42,18,0,0.45)')
       : (can ? 'rgba(220,232,255,0.92)' : 'rgba(220,232,255,0.3)');
-    text(ctx, slot.label, x + bw / 2, y + 6, { size: 12, weight: 700, color: labelColor, align: 'center', spacing: 1.5 });
+    text(ctx, slot.label, x + bw / 2, y + (big ? 7 : 6), { size: big ? 18 : 12, weight: 700, color: labelColor, align: 'center', spacing: 1.5 });
 
     // little lights: how much of this upgrade you have
     const [filled, total] = meter.level(i, player);
-    const pw = 9;
-    const pg = 4;
+    const pw = big ? 13 : 9;
+    const pg = big ? 5 : 4;
     const px0 = x + bw / 2 - (total * pw + (total - 1) * pg) / 2;
     for (let k = 0; k < total; k++) {
       ctx.beginPath();
-      ctx.roundRect(px0 + k * (pw + pg), y + 23, pw, 3, 1.5);
+      ctx.roundRect(px0 + k * (pw + pg), y + (big ? 32 : 23), pw, big ? 5 : 3, big ? 2.5 : 1.5);
       if (k < filled) ctx.fillStyle = on ? '#2a1200' : '#7fdcff';
       else ctx.fillStyle = on ? 'rgba(42,18,0,0.25)' : 'rgba(150,180,240,0.2)';
       ctx.fill();
@@ -87,20 +96,25 @@ function drawMeter(ctx, game) {
   });
 }
 
-export function drawPopups(ctx, popups) {
+export function drawPopups(ctx, popups, big = false) {
   for (const p of popups) {
     const k = p.t / 1.1;
     ctx.globalAlpha = 1 - k * k;
-    text(ctx, p.text, p.x, p.y - 30 * k, { size: 16, weight: 800, color: `rgb(${p.rgb})`, align: 'center', base: 'middle', spacing: 2 });
+    text(ctx, p.text, p.x, p.y - 30 * k, { size: big ? 22 : 16, weight: 800, color: `rgb(${p.rgb})`, align: 'center', base: 'middle', spacing: 2 });
   }
   ctx.globalAlpha = 1;
 }
 
-export function drawHint(ctx, alpha) {
+export function drawHint(ctx, alpha, touch = false) {
   if (alpha <= 0) return;
   ctx.globalAlpha = alpha;
-  text(ctx, 'Move  ←↑↓→ / WASD      Fire  Z / Space      Power-up  X / Shift      Pause  P      Sound  M',
-    W / 2, H - 78, { size: 15, weight: 500, color: 'rgba(210,225,255,0.85)', align: 'center', base: 'middle' });
+  if (touch) {
+    text(ctx, 'Drag anywhere to steer      Your gun fires by itself      Tap POWER to take a power-up',
+      W / 2, H - 88, { size: 22, weight: 600, color: 'rgba(210,225,255,0.9)', align: 'center', base: 'middle' });
+  } else {
+    text(ctx, 'Move  ←↑↓→ / WASD      Fire  Z / Space      Power-up  X / Shift      Pause  P      Sound  M',
+      W / 2, H - 78, { size: 15, weight: 500, color: 'rgba(210,225,255,0.85)', align: 'center', base: 'middle' });
+  }
   ctx.globalAlpha = 1;
 }
 
@@ -137,11 +151,11 @@ export function drawBanner(ctx, b) {
 }
 
 // Boss name and health, top centre.
-export function drawBossBar(ctx, boss) {
+export function drawBossBar(ctx, boss, big = false) {
   const w = 380;
   const x = (W - w) / 2;
-  const y = 44;
-  text(ctx, boss.name, W / 2, 22, { size: 12, weight: 800, align: 'center', spacing: 3, color: 'rgba(255,200,170,0.9)' });
+  const y = big ? 48 : 44;
+  text(ctx, boss.name, W / 2, 22, { size: big ? 16 : 12, weight: 800, align: 'center', spacing: 3, color: 'rgba(255,200,170,0.9)' });
   ctx.beginPath();
   ctx.roundRect(x, y, w, 8, 4);
   ctx.fillStyle = 'rgba(20,10,20,0.7)';
@@ -161,7 +175,8 @@ export function drawBossBar(ctx, boss) {
   }
 }
 
-export function drawMuted(ctx) {
+export function drawMuted(ctx, touch = false) {
+  if (touch) return; // the sound button shows it
   text(ctx, 'SOUND OFF  ·  M', W / 2, 22, { size: 12, weight: 700, color: 'rgba(170,190,230,0.65)', align: 'center', spacing: 2 });
 }
 
@@ -177,14 +192,14 @@ export function drawGameOver(ctx, game) {
   }
   if (game.stateT > 1.2) {
     ctx.globalAlpha = 0.6 + 0.4 * Math.sin(game.stateT * 4);
-    text(ctx, 'Press Z or Space to play again', W / 2, H / 2 + 90, { size: 17, weight: 500, align: 'center', base: 'middle', color: 'rgba(200,215,245,0.9)' });
+    text(ctx, isTouch(game) ? 'Tap to play again' : 'Press Z or Space to play again', W / 2, H / 2 + 90, { size: 17, weight: 500, align: 'center', base: 'middle', color: 'rgba(200,215,245,0.9)' });
   }
   ctx.globalAlpha = 1;
 }
 
-export function drawPause(ctx) {
+export function drawPause(ctx, touch = false) {
   ctx.fillStyle = 'rgba(3,5,14,0.55)';
   ctx.fillRect(0, 0, W, H);
   text(ctx, 'PAUSED', W / 2, H / 2 - 14, { size: 54, weight: 800, align: 'center', base: 'middle', spacing: 6 });
-  text(ctx, 'Press P to carry on', W / 2, H / 2 + 34, { size: 18, weight: 500, align: 'center', base: 'middle', color: 'rgba(200,215,245,0.8)' });
+  text(ctx, touch ? 'Tap to carry on' : 'Press P to carry on', W / 2, H / 2 + 34, { size: 18, weight: 500, align: 'center', base: 'middle', color: 'rgba(200,215,245,0.8)' });
 }

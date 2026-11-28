@@ -26,6 +26,8 @@ The folder is called `gradius`. The game's name, ships, art, music and levels ar
 | Take power-up | X or Shift | B |
 | Pause | P / Esc | Start |
 
+On phones and tablets: drag anywhere to steer, the gun fires by itself, and on-screen buttons handle power-up, pause and sound.
+
 ## The power-up meter (the heart of the game)
 Shoot down certain enemies and they drop **energy cells**. Each cell moves the highlight one slot along the meter at the bottom of the screen. Press **Take** to get whatever is highlighted, and the meter resets. You choose between taking a small upgrade now and saving up for a bigger one.
 
@@ -69,7 +71,8 @@ Title → (short how-to-play card on first launch) → Stage → Stage clear / G
 ```
 gradius/
   public/           everything that goes live
-   index.html       page + canvas
+   index.html       page + canvas + on-screen touch buttons
+   manifest.webmanifest, sw.js, icons/   installable app (PWA), offline
    style.css
    src/
     main.js         start-up, game loop
@@ -77,7 +80,7 @@ gradius/
    stage.js         runs a stage: events by distance, checkpoints, rewind
     config.js       screen size, shared helpers
     background.js   sky, nebula, star layers
-    input.js        keyboard + controller
+    input.js        keyboard, touch (drag to steer), controller later
     art.js          code-drawn ships, enemies, effects
    audio.js         sound effects + music
     player.js       ship, weapons, wingmen, shield
@@ -98,6 +101,7 @@ gradius/
 2.5 ✅ **Sound** (moved up from step 5): synth sound effects for every action, and an original synthwave music track. M mutes.
 3. ✅ **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
 4. ✅ **Bosses**: the mining rig mid-boss and the Lighthouse boss.
+5.5 ✅ **Mobile + app**: touch controls (drag to steer, auto-fire, POWER / pause / sound buttons), bigger HUD on phones, "turn sideways" card, installable as an app (PWA) that works offline.
 5. **Look and feel**: screen shake, more glow and explosion polish, boss music.
 6. **Finish**: title screen, game over, high scores, pause, controller support, tuning difficulty.
 7. **Go live** on Cloudflare.

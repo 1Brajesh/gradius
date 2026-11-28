@@ -11,11 +11,12 @@ export class Particles {
   constructor() {
     this.list = [];
     this.rings = [];
+    this.max = MAX;   // main.js lowers this on phones
   }
 
   // p: { x, y, vx, vy, life, size, sprite, drag?, alpha?, grow? }
   add(p) {
-    if (this.list.length >= MAX) return;
+    if (this.list.length >= this.max) return;
     p.px = p.x;
     p.py = p.y;
     p.age = 0;

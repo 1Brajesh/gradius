@@ -226,7 +226,9 @@ export class Game {
         this.sound.fadeMusic(0, 2);
       }
     }
-    if (this.state === 'over' && this.stateT > 1.2 && input.take('fire')) this.newGame();
+    // a tap anywhere also restarts (and taps during play are just thrown away)
+    const tap = input.take('tap');
+    if (this.state === 'over' && this.stateT > 1.2 && (input.take('fire') || tap)) this.newGame();
 
     if (this.time > 8 || (input.touched && this.time > 4)) this.hint = Math.max(0, this.hint - dt * 1.5);
   }
@@ -473,7 +475,8 @@ export class Game {
     this.fx.draw(ctx, a);
     this.player.draw(ctx, a);
 
-    ui.drawPopups(ctx, this.popups);
+    const touch = !!this.input.touchMode;
+    ui.drawPopups(ctx, this.popups, touch);
     if (this.bannerInfo) ui.drawBanner(ctx, this.bannerInfo);
     stamp(ctx, art.vignette, W / 2, H / 2);
     if (this.whiteFlash > 0) {
@@ -481,9 +484,9 @@ export class Game {
       ctx.fillRect(0, 0, W, H);
     }
     ui.drawHud(ctx, this);
-    if (this.boss && !this.boss.dying && this.boss.t > 1) ui.drawBossBar(ctx, this.boss);
-    if (this.sound.muted) ui.drawMuted(ctx);
-    ui.drawHint(ctx, this.hint);
+    if (this.boss && !this.boss.dying && this.boss.t > 1) ui.drawBossBar(ctx, this.boss, touch);
+    if (this.sound.muted) ui.drawMuted(ctx, touch);
+    ui.drawHint(ctx, this.hint, touch);
     if (this.state === 'over') ui.drawGameOver(ctx, this);
   }
 }

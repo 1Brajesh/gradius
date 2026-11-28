@@ -1,17 +1,115 @@
+:root {
+  /* the phone's notch and rounded-corner margins, read by main.js */
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+
 html, body {
   margin: 0;
   height: 100%;
   background: #000;
   overflow: hidden;
+  /* no scrolling, zooming, text selection or long-press menus while playing */
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
+  position: fixed;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
 canvas {
   display: block;
   cursor: none;
+  touch-action: none;
+}
+
+[hidden] { display: none !important; }
+
+/* ----- on-screen buttons ----- */
+.tbtn {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(130, 170, 255, 0.45);
+  background: rgba(12, 18, 42, 0.45);
+  color: rgba(220, 232, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition: transform 0.06s, background-color 0.15s, box-shadow 0.15s;
+}
+.tbtn svg {
+  width: 52%;
+  height: 52%;
+  fill: currentColor;
+  stroke: currentColor;
+}
+.tbtn.down { transform: scale(0.92); background: rgba(60, 90, 170, 0.55); }
+.tbtn.small.on { background: rgba(60, 90, 170, 0.6); }
+
+#btn-sound .cross { display: none; }
+#btn-sound.off .wave { display: none; }
+#btn-sound.off .cross { display: inline; }
+#btn-sound.off { color: rgba(220, 232, 255, 0.45); }
+
+#btn-power {
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1px;
+  border: 2px solid rgba(255, 190, 100, 0.45);
+  color: rgba(255, 220, 160, 0.7);
+}
+#btn-power.ready {
+  background: linear-gradient(#ffe08a, #ff9a3a);
+  border-color: #ffd27a;
+  color: #2a1200;
+  box-shadow: 0 0 18px rgba(255, 170, 60, 0.75);
+}
+#btn-power.ready.down { transform: scale(0.92); }
+
+/* ----- "turn sideways" card ----- */
+#rotate {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 5, 14, 0.92);
+  color: #eaf2ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 0 24px;
+}
+#rotate svg {
+  width: 72px;
+  height: 72px;
+  stroke: #7fdcff;
+  animation: tilt 2.4s ease-in-out infinite;
+}
+#rotate p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+@keyframes tilt {
+  0%, 30% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-90deg); }
 }

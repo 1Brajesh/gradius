@@ -66,7 +66,7 @@ export class Sound {
     try { this.muted = localStorage.getItem(MUTE_KEY) === '1'; } catch { this.muted = false; }
   }
 
-  // Called on the first key press. `ctx` can be passed in for testing.
+  // Called on the first key press or touch. `ctx` can be passed in for testing.
   unlock(ctx) {
     if (this.ctx) {
       if (!this.paused && this.ctx.state === 'suspended') this.ctx.resume();
@@ -74,6 +74,9 @@ export class Sound {
     }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!ctx && !AC) return;
+    // iPhones mute web pages when the silent switch is on; asking for
+    // 'playback' lets the game's sound through, like a music app
+    try { if (!ctx && navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* older Safari */ }
     this.ctx = ctx || new AC();
     this.build();
     if (this.paused && this.ctx.suspend) this.ctx.suspend();

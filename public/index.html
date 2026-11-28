@@ -2,13 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Starwake</title>
+  <meta name="description" content="An original side-scrolling space shooter.">
   <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Starwake">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <canvas id="game" aria-label="Starwake game screen"></canvas>
+
+  <!-- on-screen buttons for phones and tablets (main.js places them) -->
+  <div id="touch" hidden>
+    <button class="tbtn small" id="btn-pause" aria-label="Pause">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+    </button>
+    <button class="tbtn small" id="btn-sound" aria-label="Sound on or off">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/><path class="cross" d="M16 9l5 6M21 9l-5 6" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="tbtn" id="btn-power" aria-label="Take power-up">POWER</button>
+  </div>
+
+  <div id="rotate" hidden>
+    <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="8" width="24" height="44" rx="4" fill="none" stroke-width="3"/><path d="M50 40a18 18 0 0 1-14 14" fill="none" stroke-width="3" stroke-linecap="round"/><path d="M36 48l0 6 6 0" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <p>Turn your phone sideways to play</p>
+  </div>
+
   <script type="module" src="src/main.js"></script>
 </body>
 </html>
