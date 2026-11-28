@@ -8,7 +8,7 @@
 
 import { W, PLAY, lerp, clamp } from './config.js';
 import { stamp, RIG, LH } from './art.js';
-import { explode, sparks } from './fx.js';
+import { explode, bigExplode, sparks } from './fx.js';
 
 const MID = (PLAY.top + PLAY.bottom) / 2;
 const ease = (t) => 1 - (1 - t) ** 3;
@@ -48,10 +48,12 @@ class Boss {
   die() {
     const g = this.game;
     this.dying = 0.001;
+    this.beam = null;   // a beam mid-fire shouldn't hang in the air while it breaks up
     g.addScore(this.score);
     g.popup(`+${this.score}`, this.core.x, this.core.y - 50);
     for (const s of g.enemyShots) s.dead = true;
     for (const e of g.enemies) if (e.anchor === this) g.kill(e);
+    g.shake.add(0.6);
     g.sound.play('boom', 2.5);
   }
 
@@ -66,12 +68,15 @@ class Boss {
       const x = this.x + ox + (Math.random() - 0.5) * 50;
       const y = this.y + oy + (Math.random() - 0.5) * 50;
       explode(g.fx, g.art, x, y, 1 + Math.random() * 0.8);
+      g.shake.add(0.12);
       g.sound.play('boom', 1.2);
     }
     if (this.dying >= length && !this.done) {
-      explode(g.fx, g.art, this.core.x, this.core.y, 4);
+      bigExplode(g.fx, g.art, this.core.x, this.core.y, 4);
       g.fx.ring(this.core.x, this.core.y, 30, 420, 1.1, '255,230,180');
       g.whiteFlash = 1;
+      g.shake.add(1);
+      g.freeze = 0.14;
       g.sound.play('death');
       this.done = true;
       this.gone = true;
@@ -159,6 +164,7 @@ export class MiningRig extends Boss {
         const sp = 230 + Math.random() * 90;
         g.spawn('pebble', { x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, spin: (Math.random() - 0.5) * 6 });
       }
+      g.shake.add(0.15);
       g.sound.play('rocks');
     }
 
@@ -338,6 +344,7 @@ export class Lighthouse extends Boss {
     if (ph !== this.phaseSeen) {
       this.phaseSeen = ph;
       g.fx.ring(this.x, this.y, 40, 260, 0.6, '255,210,140');
+      if (ph > 1) g.shake.add(0.45);
       g.sound.play('phase');
     }
 
@@ -381,8 +388,10 @@ export class Lighthouse extends Boss {
         b.t += dt;
         if (b.t > 1.0 && !b.fired) {
           b.fired = true;
+          g.shake.add(0.5);
           g.sound.play('laser');
         }
+        if (this.beamActive()) g.shake.hold(0.38); // the beam rumbles while it fires
         if (b.t > 1.75) {
           this.beam = null;
           this.beamT = ph === 3 ? 4.2 : 5.2;

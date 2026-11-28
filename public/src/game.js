@@ -5,7 +5,8 @@ import { W, H, lerp } from './config.js';
 import { stamp } from './art.js';
 import { Background } from './background.js';
 import { Player, HIT_R, SHIELD_R } from './player.js';
-import { Particles, explode, sparks } from './fx.js';
+import { Particles, Shake, explode, bigExplode, sparks } from './fx.js';
+import { Bloom } from './post.js';
 import { Meter } from './powerups.js';
 import { makeEnemy, updateEnemies, drawEnemies } from './enemies.js';
 import { Stage } from './stage.js';
@@ -32,6 +33,12 @@ export class Game {
     this.input = input;
     this.sound = sound;
     this.fx = new Particles();
+    this.shake = new Shake();
+    // the glow pass needs a real page; lowFx turns it off on slow devices
+    this.bloom = typeof document !== 'undefined' ? new Bloom() : null;
+    this.lowFx = false;
+    this.freeze = 0;           // a split-second pause on big moments ("hit-stop")
+    this.hurt = 0;             // red flash at the screen edges when you're hit
     this.bg = new Background(art);
     this.meter = new Meter();
     this.player = new Player(art, this.fx, sound);
@@ -57,6 +64,9 @@ export class Game {
     this.bannerInfo = null;
     this.boss = null;
     this.whiteFlash = 0;
+    this.hurt = 0;
+    this.freeze = 0;
+    this.shake.trauma = 0;
     this.sound.setMood('stage');
     this.player.reset();
     this.meter.reset();
@@ -157,6 +167,11 @@ export class Game {
   // ----- each step -----
   update(dt) {
     const { input, player } = this;
+    this.shake.update(dt);
+    if (this.freeze > 0) {
+      this.freeze -= dt;
+      return;
+    }
     this.time += dt;
     this.stateT += dt;
 
@@ -164,6 +179,7 @@ export class Game {
     if (this.state !== 'over') this.stage.update(dt, this);
     if (this.boss) this.boss.update(dt, this);
     this.whiteFlash = Math.max(0, this.whiteFlash - dt * 1.2);
+    this.hurt = Math.max(0, this.hurt - dt * 1.6);
     if (this.bannerInfo && (this.bannerInfo.t += dt) > 3.4) this.bannerInfo = null;
 
     if (input.take('power') && player.alive) {
@@ -340,6 +356,7 @@ export class Game {
         s.dead = true;
         p.shieldHit();
         this.sound.play('shield');
+        this.shake.add(0.15);
         sparks(this.fx, this.art, s.x, s.y, 5, this.art.glowBlue);
         continue;
       }
@@ -403,6 +420,7 @@ export class Game {
     e.dead = true;
     this.addScore(e.score);
     explode(this.fx, this.art, e.x, e.y, e.boom);
+    this.shake.add(0.25 * e.boom);
     this.sound.play('boom', e.boom);
     if (e.drops) this.dropCell(e.x, e.y);
     if (e.type === 'shard' && e.size === 3) {
@@ -435,8 +453,11 @@ export class Game {
     const p = this.player;
     if (!p.alive || p.invuln > 0) return;
     p.alive = false;
-    explode(this.fx, this.art, p.x, p.y, 2.2);
+    bigExplode(this.fx, this.art, p.x, p.y, 2.2);
     this.fx.ring(p.x, p.y, 20, 180, 0.7, '150,220,255');
+    this.shake.add(0.9);
+    this.freeze = 0.1;
+    this.hurt = 1;
     this.sound.play('death');
     this.sound.duck();
     p.loseUpgrades();
@@ -449,6 +470,10 @@ export class Game {
   draw(ctx, a) {
     const art = this.art;
     const pos = lerp(this.stage.ppos, this.stage.pos, a);
+
+    // the world (shaken); the HUD on top stays still
+    ctx.save();
+    this.shake.apply(ctx, W, H);
     this.bg.draw(ctx, a, this.stage.tint());
     this.terrain.draw(ctx, pos, this.time);
 
@@ -474,11 +499,20 @@ export class Game {
     this.player.drawShots(ctx, a);
     this.fx.draw(ctx, a);
     this.player.draw(ctx, a);
+    ctx.restore();
+    if (this.bloom && !this.lowFx) this.bloom.apply(ctx);
 
     const touch = !!this.input.touchMode;
     ui.drawPopups(ctx, this.popups, touch);
     if (this.bannerInfo) ui.drawBanner(ctx, this.bannerInfo);
     stamp(ctx, art.vignette, W / 2, H / 2);
+    if (this.hurt > 0) {
+      const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.62);
+      g.addColorStop(0, 'rgba(255,30,40,0)');
+      g.addColorStop(1, `rgba(255,30,40,${0.45 * this.hurt})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
     if (this.whiteFlash > 0) {
       ctx.fillStyle = `rgba(255,250,235,${0.85 * this.whiteFlash})`;
       ctx.fillRect(0, 0, W, H);

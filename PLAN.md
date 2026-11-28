@@ -90,6 +90,7 @@ gradius/
    stage1.js        Stage 1: wall shapes, speed, and what appears when
    terrain.js       canyon and tunnel walls, crystals
     fx.js           particles, explosions, screen shake
+    post.js         bloom glow pass
     ui.js           score, lives, meter, menus
   wrangler.toml     Cloudflare deploy settings
   PLAN.md
@@ -102,7 +103,7 @@ gradius/
 3. ✅ **The stage**: the timeline system, all 6 enemies, the ice field and canyon walls, the checkpoint.
 4. ✅ **Bosses**: the mining rig mid-boss and the Lighthouse boss.
 5.5 ✅ **Mobile + app**: touch controls (drag to steer, auto-fire, POWER / pause / sound buttons), bigger HUD on phones, "turn sideways" card, installable as an app (PWA) that works offline.
-5. **Look and feel**: screen shake, more glow and explosion polish, boss music.
+5. ✅ **Look and feel**: screen shake (world only, HUD stays still), richer explosions (fireball, spark streaks, embers, wreckage, smoke, light flash), a split-second freeze on deaths, red flash when hit, a bloom glow pass that switches itself off on slow devices. Boss music was done in 2.5.
 6. **Finish**: title screen, game over, high scores, pause, controller support, tuning difficulty.
 7. **Go live** on Cloudflare.
 

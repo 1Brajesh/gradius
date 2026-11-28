@@ -175,6 +175,60 @@ function glow(color, size) {
   }, 1);
 }
 
+// A ball of fire: white-hot middle, yellow, orange, then dark red edge.
+function fireball() {
+  return sprite(64, 64, (g) => {
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, 32);
+    gr.addColorStop(0, 'rgba(255,240,190,1)');
+    gr.addColorStop(0.15, 'rgba(255,190,80,0.95)');
+    gr.addColorStop(0.42, 'rgba(240,100,25,0.75)');
+    gr.addColorStop(0.72, 'rgba(150,35,15,0.3)');
+    gr.addColorStop(1, 'rgba(60,0,0,0)');
+    g.fillStyle = gr;
+    g.fillRect(-32, -32, 64, 64);
+  }, 1);
+}
+
+// A soft, lumpy puff of dark smoke (drawn normally, not as light).
+function smoke() {
+  return sprite(64, 64, (g) => {
+    const rand = rng(11);
+    for (let i = 0; i < 7; i++) {
+      const a = rand() * Math.PI * 2;
+      const d = rand() * 10;
+      const r = 14 + rand() * 10;
+      const x = Math.cos(a) * d;
+      const y = Math.sin(a) * d;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(120,112,128,0.38)');
+      gr.addColorStop(1, 'rgba(70,66,84,0)');
+      g.fillStyle = gr;
+      g.fillRect(-32, -32, 64, 64);
+    }
+  });
+}
+
+// A jagged chunk of hull with a hot glowing edge.
+function debris() {
+  return sprite(14, 10, (g) => {
+    g.beginPath();
+    g.moveTo(-6, -2);
+    g.lineTo(-1, -4.5);
+    g.lineTo(6, -1.5);
+    g.lineTo(3, 4);
+    g.lineTo(-4, 3.5);
+    g.closePath();
+    const gr = g.createLinearGradient(-6, -4, 6, 4);
+    gr.addColorStop(0, '#9aa3b8');
+    gr.addColorStop(1, '#3a3f52');
+    g.fillStyle = gr;
+    g.fill();
+    g.strokeStyle = 'rgba(255,150,60,0.9)';
+    g.lineWidth = 1;
+    g.stroke();
+  });
+}
+
 function shot() {
   return sprite(40, 14, (g) => {
     // outer haze
@@ -1142,6 +1196,9 @@ export function buildArt() {
       sweeper: withFlash(sweeper()),
       bulb: withFlash(bulb()),
     },
+    fireball: fireball(),
+    smoke: smoke(),
+    debris: debris(),
     glowBlue: glow('rgba(80,180,255,1)', 64),
     glowWhite: glow('rgba(220,235,255,1)', 64),
     glowOrange: glow('rgba(255,140,60,1)', 64),

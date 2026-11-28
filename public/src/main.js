@@ -194,11 +194,22 @@ function updateButtons() {
 
 let last = performance.now() / 1000;
 let acc = 0;
+let slowT = 0; // how long frames have been coming too slowly
 
 function frame(nowMs) {
   const now = nowMs / 1000;
   const dt = Math.max(0, Math.min(now - last, 0.25));
   last = now;
+
+  // if this device can't keep up (under ~40 frames a second for a few
+  // seconds), turn off the glow pass and use fewer particles
+  if (!paused && !game.lowFx && !document.hidden) {
+    slowT = dt > 1 / 40 ? slowT + dt : Math.max(0, slowT - dt * 0.5);
+    if (slowT > 3) {
+      game.lowFx = true;
+      game.fx.max = Math.min(game.fx.max, 900);
+    }
+  }
 
   const portrait = isPortrait();
   rotateUI.hidden = !portrait;
